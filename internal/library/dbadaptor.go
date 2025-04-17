@@ -2,6 +2,7 @@ package library
 
 import (
 	"context"
+
 	"github.com/matthewjamesboyle/logging-module/internal/db"
 )
 
@@ -20,7 +21,22 @@ func (m MockAdaptor) GetByName(ctx context.Context, name string) (*Book, error) 
 
 func (m MockAdaptor) GetByAuthor(ctx context.Context, authorName string) (*Book, error) {
 	//TODO implement me
-	panic("implement me")
+	books, err := m.db.GetAllBooks(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, book := range books {
+		if book.Author == authorName {
+			return &Book{
+				name:      book.Title,
+				author:    book.Author,
+				published: book.PublishedOn,
+			}, nil
+		}
+	}
+
+	return nil, ErrNoBooks
 }
 
 func (m MockAdaptor) GetAll(ctx context.Context) ([]Book, error) {

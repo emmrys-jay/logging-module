@@ -3,10 +3,11 @@ package transport
 import (
 	"encoding/json"
 	"errors"
-	"github.com/matthewjamesboyle/logging-module/internal/library"
-	"github.com/matthewjamesboyle/logging-module/internal/log"
 	"log/slog"
 	"net/http"
+
+	"github.com/matthewjamesboyle/logging-module/internal/library"
+	"github.com/matthewjamesboyle/logging-module/internal/log"
 )
 
 type BookResponse struct {
@@ -65,6 +66,76 @@ func (h Handler) GetAllBooks(w http.ResponseWriter, r *http.Request) {
 	for _, v := range books {
 		bookRes = append(bookRes, newBookResponse(&v))
 	}
+
+	response, err := json.Marshal(bookRes)
+	if err != nil {
+		h.logger.ErrorContext(
+			r.Context(),
+			"failed_to_marshal_response",
+			slog.Any("err", err),
+			reqID,
+		)
+		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if _, err := w.Write(response); err != nil {
+		h.logger.ErrorContext(
+			r.Context(),
+			"failed_to_write_response",
+			slog.Any("err", err),
+			reqID,
+		)
+	}
+}
+
+func (h Handler) GetBookByAuthor(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	reqID := slog.String("request_id", r.Context().Value(requestIDKey{}).(string))
+
+	author := r.URL.Query().Get("author")
+
+	h.logger.InfoContext(ctx, "received author", slog.String("author", author))
+	book, err := h.svc.GetBookByAuthor(ctx, author)
+	if err != nil {
+		switch {
+		case errors.Is(err, library.ErrEmptyAuthor):
+			h.logger.InfoContext(
+				r.Context(),
+				"empty_author_passed",
+				reqID,
+			)
+			http.Error(w, "Author is required", http.StatusBadRequest)
+		case errors.Is(err, library.ErrUnsupportedAuthor):
+			h.logger.InfoContext(
+				r.Context(),
+				"unsupported_author_passed",
+				reqID,
+			)
+			http.Error(w, "Unsupported author", http.StatusBadRequest)
+		case errors.Is(err, library.ErrNoBooks):
+			h.logger.InfoContext(
+				r.Context(),
+				"no_books_found",
+				reqID,
+			)
+			http.Error(w, "No book found with given author", http.StatusNotFound)
+		default:
+			h.logger.ErrorContext(
+				r.Context(),
+				"internal_server_error",
+				slog.Any("err", err),
+				reqID,
+			)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	bookRes := newBookResponse(book)
 
 	response, err := json.Marshal(bookRes)
 	if err != nil {

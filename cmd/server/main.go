@@ -2,17 +2,18 @@ package main
 
 import (
 	"context"
+	"io"
+	"log"
+	"log/slog"
+	"net/http"
+	"os"
+
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/matthewjamesboyle/logging-module/internal/db"
 	"github.com/matthewjamesboyle/logging-module/internal/elasticsearch"
 	"github.com/matthewjamesboyle/logging-module/internal/library"
 	ilog "github.com/matthewjamesboyle/logging-module/internal/log"
 	"github.com/matthewjamesboyle/logging-module/internal/transport"
-	"io"
-	"log"
-	"log/slog"
-	"net/http"
-	"os"
 )
 
 func main() {
@@ -67,7 +68,7 @@ func main() {
 	mux := transport.NewMux(*h)
 
 	l.InfoContext(ctx, "server started")
-	if err := http.ListenAndServe(":8080", mux); err != nil {
+	if err := http.ListenAndServe(":8081", mux); err != nil {
 		l.ErrorContext(ctx, "server stopped", slog.Any("err", err))
 		os.Exit(1)
 	}

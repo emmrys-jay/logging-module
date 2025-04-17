@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/matthewjamesboyle/logging-module/internal/log"
 	"log/slog"
+	"strings"
 	"time"
+
+	"github.com/matthewjamesboyle/logging-module/internal/log"
 )
 
 var (
@@ -71,7 +73,10 @@ func (svc *Service) GetBookByAuthor(ctx context.Context, authorName string) (*Bo
 		return nil, ErrEmptyAuthor
 	}
 
-	if _, ok := svc.supportedAuthors[authorName]; !ok {
+	a := strings.ToLower(authorName)
+	svc.logger.InfoContext(ctx, "checking for supported author with name", slog.String("author", a))
+
+	if _, ok := svc.supportedAuthors[a]; !ok {
 		return nil, ErrUnsupportedAuthor
 	}
 

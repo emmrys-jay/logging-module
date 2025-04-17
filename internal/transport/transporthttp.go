@@ -2,9 +2,10 @@ package transport
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"net/http"
 )
 
 type requestIDKey struct{}
@@ -15,6 +16,7 @@ func NewMux(h Handler) *mux.Router {
 	m.Use(requestIDMiddleWare)
 
 	m.HandleFunc("/books", h.GetAllBooks).Methods(http.MethodGet)
+	m.HandleFunc("/book", h.GetBookByAuthor).Methods(http.MethodGet)
 	return m
 }
 

@@ -25,7 +25,7 @@ func main() {
 				return
 			default:
 				// Perform the GET request
-				resp, err := http.Get("http://localhost:8080/books")
+				resp, err := http.Get("http://localhost:8081/books")
 				if err != nil {
 					fmt.Println("Error making request:", err)
 					continue
